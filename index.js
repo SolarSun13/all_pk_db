@@ -316,10 +316,16 @@ function pruneMessageMap() {
 
 async function fetchNewestMessageId(channelId) {
   try {
+    const token =
+      process.env.TOKEN ||
+      process.env.BOT_TOKEN ||
+      process.env.DISCORD_TOKEN;
+
     const res = await fetch(
       `https://discord.com/api/v10/channels/${channelId}/messages?limit=1`,
-      { headers: { "Authorization": `Bot ${process.env.TOKEN}` } }
+      { headers: { "Authorization": `Bot ${token}` } }
     );
+
     const json = await res.json();
     if (Array.isArray(json) && json.length > 0) return json[0].id;
   } catch {}
