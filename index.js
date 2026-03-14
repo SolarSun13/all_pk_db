@@ -491,6 +491,12 @@ client.once("clientReady", async () => {
   console.log("Slash commands registered.");
 
   pruneMessageMap();
+
+  // ------------------------------
+  // Start rotating status *after* login
+  // ------------------------------
+  rotateStatus();
+  setInterval(rotateStatus, 20 * 60 * 1000);
 });
 
 // ======================================================
@@ -784,10 +790,6 @@ function rotateStatus() {
 
   console.log(`Status updated → ${choice}`);
 }
-
-rotateStatus();
-setInterval(rotateStatus, 20 * 60 * 1000);
-
 
 // ======================================================
 // 15. Relay Queue
