@@ -1,0 +1,16 @@
+{
+  "guilds": {
+    "1481193205319073805": {
+      "name": "App Test",
+      "prefix": "[PHIL]",
+      "channel": "1481193206212198503",
+      "webhook": "https://discord.com/api/webhooks/1481323706511790242/Ntmp0FTsGCWN8PytNct2nM7ZWJEfrOjuQfsA-ex149c7ppUH9cemk1S1WPk6lRPKFC7v"
+    },
+    "1459097706801922133": {
+      "name": "test",
+      "prefix": "[JUMP]",
+      "channel": "1481198393387909143",
+      "webhook": "https://discord.com/api/webhooks/1481526863854702682/NyAqbZFeBIacFnvz8Qk-mi0AzsUuGkkwOznmDE9XCVkEq6vWvfZysdogykJSIe8VoNO0"
+    }
+  }
+}

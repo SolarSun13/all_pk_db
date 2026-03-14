@@ -1,0 +1,11 @@
+{
+  "name": "alliance-chat-bot",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.4.5",
+    "node-fetch": "^3.3.2",
+    "undici": "^7.22.0"
+  }
+}
