@@ -55,6 +55,10 @@ export function registerAllianceHandlers(client) {
   client.on("messageCreate", async (msg) => {
     if (!msg.guild) return;
     if (msg.author.bot) return;
+
+    // Ignore system pin messages
+    if (msg.type === 6) return;
+
     if (!isAllianceLinked(msg)) return;
 
     const pool = "alliance";
