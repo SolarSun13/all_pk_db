@@ -7,6 +7,7 @@ import {
   Routes,
   PermissionFlagsBits,
   ChannelType,
+  EmbedBuilder
 } from "discord.js";
 
 import { getConfig, saveConfig } from "./core/storage.js";
@@ -85,18 +86,8 @@ const commandsData = [
     options: [
       {
         type: 3,
-        name: "pool",
-        description: "Pool to inspect",
-        required: true,
-        choices: [
-          { name: "Alliance", value: "alliance" },
-          { name: "Round Table", value: "roundtable" },
-        ],
-      },
-      {
-        type: 3,
         name: "id",
-        description: "Message ID to inspect",
+        description: "Message ID or message link",
         required: true,
       },
     ],
@@ -329,22 +320,68 @@ async function handleServers(interaction) {
 }
 
 
+// ------------------------------------------------------
+// UPDATED DEBUG COMMAND
+// ------------------------------------------------------
+
 async function handleDebug(interaction) {
-  const pool = interaction.options.getString("pool");
-  const id = interaction.options.getString("id");
+  const raw = interaction.options.getString("id");
 
-  const entry = getEntry(pool, id);
-  const origin = getOriginAndRelays(pool, id);
+  // Extract message ID from link or raw ID
+  let messageId = raw.trim();
+  if (messageId.includes("discord.com/channels/")) {
+    const parts = messageId.split("/");
+    messageId = parts[parts.length - 1];
+  }
 
-  await interaction.reply({
-    content:
+  const guildId = interaction.guild.id;
+  const channelId = interaction.channel.id;
+  const cfg = getConfig().guilds[guildId];
+
+  let pool = null;
+
+  // 1. Try detecting pool from the channel where command was run
+  if (cfg?.roundtable?.channel === channelId) pool = "roundtable";
+  if (cfg?.alliance?.channel === channelId) pool = "alliance";
+
+  // 2. If not found, try mapping lookup
+  if (!pool) {
+    if (getEntry("alliance", messageId)) pool = "alliance";
+    else if (getEntry("roundtable", messageId)) pool = "roundtable";
+  }
+
+  // 3. If still not found, message isn't in relay system
+  if (!pool) {
+    return interaction.reply({
+      content: "Message not found in relay system.",
+      ephemeral: true,
+    });
+  }
+
+  const entry = getEntry(pool, messageId);
+  const origin = getOriginAndRelays(pool, messageId);
+
+  const embed = new EmbedBuilder()
+    .setTitle("Debug Result")
+    .setColor(0x2b6cb0)
+    .addFields(
+      { name: "Pool", value: pool, inline: true },
+      { name: "Message ID", value: messageId, inline: true },
+    )
+    .setDescription(
       "```json\n" +
       JSON.stringify({ entry, origin }, null, 2) +
-      "\n```",
+      "\n```"
+    );
+
+  await interaction.reply({
+    embeds: [embed],
     ephemeral: true,
   });
 }
 
+
+// ------------------------------------------------------
 
 async function handleRepair(interaction) {
   prunePool("alliance");
