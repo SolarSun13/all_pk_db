@@ -98,8 +98,8 @@ function nowMs() {
 // 5. Caches
 // ======================================================
 
-const guildCache = new Map();   // guildId -> { guild, expires }
-const channelCache = new Map(); // channelId -> { channel, expires }
+const guildCache = new Map();
+const channelCache = new Map();
 
 function getCachedGuild(guildId) {
   const entry = guildCache.get(guildId);
@@ -158,12 +158,12 @@ function makeDefaultPrefix(name) {
 }
 
 function normalizeCustomPrefix(raw) {
-  if (!raw) return null;
-  let trimmed = raw.trim();
-  if (!trimmed) return null;
-  if (trimmed.length > PREFIX_MAX_LEN) trimmed = trimmed.slice(0, PREFIX_MAX_LEN) + "…";
-  trimmed = trimmed.replace(/^\[/, "").replace(/\]$/, "");
-  return `[${trimmed}]`;
+if (!raw) return null;
+let trimmed = raw.trim();
+if (!trimmed) return null;
+if (trimmed.length > PREFIX_MAX_LEN) trimmed = trimmed.slice(0, PREFIX_MAX_LEN) + "…";
+trimmed = trimmed.replace(/^\[/, "").replace(/\]$/, "");
+return `[${trimmed}]`;
 }
 
 function getGuildPrefix(guildId, fallbackName) {
@@ -204,7 +204,6 @@ function makeMirrorEntry(originId, guildId, webhookMessageId) {
 function normalizeEntry(id, entry) {
   if (!entry) return null;
 
-  // Old origin style: { guild_id, relays, timestamp }
   if (!entry.type && entry.relays) {
     return {
       type: ENTRY_TYPE_ORIGIN,
@@ -215,7 +214,6 @@ function normalizeEntry(id, entry) {
     };
   }
 
-  // Old mirror style: { original_id, guild_id, timestamp }
   if (!entry.type && entry.original_id) {
     return {
       type: ENTRY_TYPE_MIRROR,
@@ -226,7 +224,6 @@ function normalizeEntry(id, entry) {
     };
   }
 
-  // Already normalized
   if (entry.type === ENTRY_TYPE_ORIGIN) {
     if (!entry.originId) entry.originId = id;
     if (!Array.isArray(entry.relays)) entry.relays = [];
@@ -308,6 +305,9 @@ function pruneMessageMap() {
 
   saveMessageMap();
 }
+
+// periodic prune (minimal, essential)
+setInterval(pruneMessageMap, 60 * 60 * 1000);
 
 
 // ======================================================
@@ -428,7 +428,9 @@ async function applyReactionToTargets(action, emoji, targets, sourceMessage) {
         const r = targetMsg.reactions.cache.find(x => x.emoji.name === emoji);
         if (r) await r.users.remove(client.user.id).catch(() => {});
       }
-    } catch {}
+    } catch (err) {
+      console.error("Relay error:", err.message);
+    }
   }
 }
 
@@ -469,10 +471,13 @@ const commands = [
   {
     name: "repair",
     description: "Scan and repair the message mapping table."
-  }
+  },
+  { name: "ping", description: "Check bot status." }
 ];
 
 client.once("clientReady", async () => {
+  console.log(`Logged in as ${client.user.tag}`);
+
   const rest = new REST({ version: "10" }).setToken(
     process.env.TOKEN ||
     process.env.BOT_TOKEN ||
@@ -484,8 +489,11 @@ client.once("clientReady", async () => {
     { body: commands }
   );
 
+  console.log("Slash commands registered.");
+
   pruneMessageMap();
 });
+
 
 // ======================================================
 // 13. Slash Command Handler
@@ -513,9 +521,12 @@ client.on("interactionCreate", async (interaction) => {
     return true;
   };
 
-  // ------------------------------
+  // /ping
+  if (interaction.commandName === "ping") {
+    return interaction.reply({ content: "Pong!", flags: 64 });
+  }
+
   // /link-channel
-  // ------------------------------
   if (interaction.commandName === "link-channel") {
     if (!(await requireManageServer())) return;
 
@@ -542,9 +553,7 @@ client.on("interactionCreate", async (interaction) => {
     });
   }
 
-  // ------------------------------
   // /unlink-channel
-  // ------------------------------
   if (interaction.commandName === "unlink-channel") {
     if (!(await requireManageServer())) return;
 
@@ -557,9 +566,7 @@ client.on("interactionCreate", async (interaction) => {
     });
   }
 
-  // ------------------------------
   // /status
-  // ------------------------------
   if (interaction.commandName === "status") {
     const data = getGuildConfig(guildId);
 
@@ -571,9 +578,7 @@ client.on("interactionCreate", async (interaction) => {
     });
   }
 
-  // ------------------------------
   // /prefix
-  // ------------------------------
   if (interaction.commandName === "prefix") {
     if (!(await requireManageServer())) return;
 
@@ -620,9 +625,7 @@ client.on("interactionCreate", async (interaction) => {
     });
   }
 
-  // ------------------------------
   // /servers
-  // ------------------------------
   if (interaction.commandName === "servers") {
     if (!getGuildConfig(guildId)) {
       return interaction.reply({
@@ -640,9 +643,7 @@ client.on("interactionCreate", async (interaction) => {
     });
   }
 
-  // ------------------------------
   // /debug
-  // ------------------------------
   if (interaction.commandName === "debug") {
     const id = interaction.options.getString("message_id");
     const entry = getEntry(id);
@@ -693,7 +694,6 @@ client.on("interactionCreate", async (interaction) => {
   }
 });
 
-
 // ======================================================
 // 14. Relay Queue
 // ======================================================
@@ -709,7 +709,9 @@ async function processRelayQueue() {
     const task = relayQueue.shift();
     try {
       await task();
-    } catch {}
+    } catch (err) {
+      console.error("Relay error:", err.message);
+    }
     await new Promise(res => setTimeout(res, 30));
   }
 
@@ -739,34 +741,29 @@ client.on("messageCreate", async (msg) => {
   let replyHeader = null;
 
   if (isReply && replyInfo) {
-  replyHeader = (targetGuildId) => {
-    // Determine prefix + username of original author
-    const originPrefix = getGuildPrefix(replyInfo.originGuildId, "Server");
-    const repliedUser = msg.mentions?.repliedUser;
-    let repliedName = repliedUser ? repliedUser.username : "original message";
+    replyHeader = (targetGuildId) => {
+      const originPrefix = getGuildPrefix(replyInfo.originGuildId, "Server");
+      const repliedUser = msg.mentions?.repliedUser;
+      let repliedName = repliedUser ? repliedUser.username : "original message";
 
-// Strip any existing [PREFIX] from the replied name to avoid double prefix
 repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
 
-    // Build the "Replying to ..." part
-    const namePart = `${originPrefix} ${repliedName}`;
+      const namePart = `${originPrefix} ${repliedName}`;
 
-    // Build the link
-    if (targetGuildId === replyInfo.originGuildId) {
-      const ch = getGuildConfig(targetGuildId).channel;
-      return `-# \\↪️ Replying to ${namePart}. https://discord.com/channels/${targetGuildId}/${ch}/${replyInfo.originId}`;
-    }
+      if (targetGuildId === replyInfo.originGuildId) {
+        const ch = getGuildConfig(targetGuildId).channel;
+        return `-# \\↪️ Replying to ${namePart}. https://discord.com/channels/${targetGuildId}/${ch}/${replyInfo.originId}`;
+      }
 
-    const relay = replyInfo.relays.find(r => r.guild_id === targetGuildId);
-    if (relay?.webhook_message_id) {
-      const ch = getGuildConfig(targetGuildId).channel;
-      return `-# \\↪️ Replying to ${namePart}. https://discord.com/channels/${targetGuildId}/${ch}/${relay.webhook_message_id}`;
-    }
+      const relay = replyInfo.relays.find(r => r.guild_id === targetGuildId);
+      if (relay?.webhook_message_id) {
+        const ch = getGuildConfig(targetGuildId).channel;
+        return `-# \\↪️ Replying to ${namePart}. https://discord.com/channels/${targetGuildId}/${ch}/${relay.webhook_message_id}`;
+      }
 
-    // Fallback
-    return `-# \\↪️ Replying to ${namePart}`;
-  };
-}
+      return `-# \\↪️ Replying to ${namePart}`;
+    };
+  }
 
   let body = msg.content || "";
 
@@ -790,6 +787,11 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
     if (guildId === originGuild.id) continue;
 
     relayQueue.push(async () => {
+      if (!data.webhook) {
+        console.warn(`Missing webhook for guild ${guildId}`);
+        return;
+      }
+
       const contentParts = [];
 
       if (replyHeader) {
@@ -948,11 +950,23 @@ client.on("messageReactionRemove", async (reaction, user) => {
 
 
 // ======================================================
-// 19. Login
+// 19. Graceful Shutdown (Essential for Mamba)
+// ======================================================
+
+process.on("SIGTERM", () => {
+  console.log("Shutting down...");
+  saveConfig();
+  saveMessageMap();
+  process.exit(0);
+});
+
+
+// ======================================================
+// 20. Login
 // ======================================================
 
 client.login(
-    process.env.TOKEN ||
-    process.env.BOT_TOKEN ||
-    process.env.DISCORD_TOKEN
+  process.env.TOKEN ||
+  process.env.BOT_TOKEN ||
+  process.env.DISCORD_TOKEN
 );
