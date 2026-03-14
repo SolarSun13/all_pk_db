@@ -158,12 +158,12 @@ function makeDefaultPrefix(name) {
 }
 
 function normalizeCustomPrefix(raw) {
-if (!raw) return null;
-let trimmed = raw.trim();
-if (!trimmed) return null;
-if (trimmed.length > PREFIX_MAX_LEN) trimmed = trimmed.slice(0, PREFIX_MAX_LEN) + "…";
-trimmed = trimmed.replace(/^\[/, "").replace(/\]$/, "");
-return `[${trimmed}]`;
+  if (!raw) return null;
+  let trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (trimmed.length > PREFIX_MAX_LEN) trimmed = trimmed.slice(0, PREFIX_MAX_LEN) + "…";
+  trimmed = trimmed.replace(/^\[/, "").replace(/\]$/, "");
+  return `[${trimmed}]`;
 }
 
 function getGuildPrefix(guildId, fallbackName) {
@@ -306,7 +306,6 @@ function pruneMessageMap() {
   saveMessageMap();
 }
 
-// periodic prune (minimal, essential)
 setInterval(pruneMessageMap, 60 * 60 * 1000);
 
 
@@ -494,7 +493,6 @@ client.once("clientReady", async () => {
   pruneMessageMap();
 });
 
-
 // ======================================================
 // 13. Slash Command Handler
 // ======================================================
@@ -521,12 +519,16 @@ client.on("interactionCreate", async (interaction) => {
     return true;
   };
 
+  // ------------------------------
   // /ping
+  // ------------------------------
   if (interaction.commandName === "ping") {
     return interaction.reply({ content: "Pong!", flags: 64 });
   }
 
+  // ------------------------------
   // /link-channel
+  // ------------------------------
   if (interaction.commandName === "link-channel") {
     if (!(await requireManageServer())) return;
 
@@ -548,12 +550,17 @@ client.on("interactionCreate", async (interaction) => {
     saveConfig();
 
     return interaction.reply({
-      content: `Linked **#${channel.name}** as this server's alliance chat channel.\nPrefix: \`${defaultPrefix}\``,
+      content:
+        `**Channel Linked**\n` +
+        `>>> • Channel: <#${channel.id}>\n` +
+        `• Prefix: \`${defaultPrefix}\``,
       flags: 64
     });
   }
 
+  // ------------------------------
   // /unlink-channel
+  // ------------------------------
   if (interaction.commandName === "unlink-channel") {
     if (!(await requireManageServer())) return;
 
@@ -561,24 +568,41 @@ client.on("interactionCreate", async (interaction) => {
     saveConfig();
 
     return interaction.reply({
-      content: `This server is no longer linked to alliance chat.`,
+      content:
+        `**Channel Unlinked**\n` +
+        `>>> • This server is no longer part of the alliance chat.`,
       flags: 64
     });
   }
 
+  // ------------------------------
   // /status
+  // ------------------------------
   if (interaction.commandName === "status") {
     const data = getGuildConfig(guildId);
 
+    if (!data) {
+      return interaction.reply({
+        content:
+          `**Alliance Status**\n` +
+          `>>> • This server is **not linked** to alliance chat.`,
+        flags: 64
+      });
+    }
+
     return interaction.reply({
-      content: data
-        ? `Alliance chat linked to <#${data.channel}>\nServer name: **${data.name}**\nPrefix: ${data.prefix}`
-        : `This server is **not linked** to alliance chat.`,
+      content:
+        `**Alliance Status**\n` +
+        `>>> • Server: **${data.name}**\n` +
+        `• Prefix: \`${data.prefix}\`\n` +
+        `• Channel: <#${data.channel}>`,
       flags: 64
     });
   }
 
+  // ------------------------------
   // /prefix
+  // ------------------------------
   if (interaction.commandName === "prefix") {
     if (!(await requireManageServer())) return;
 
@@ -587,14 +611,18 @@ client.on("interactionCreate", async (interaction) => {
 
     if (!entry) {
       return interaction.reply({
-        content: `This server is not linked to alliance chat yet. Use \`/link-channel\` first.`,
+        content:
+          `**Prefix**\n` +
+          `>>> • This server is not linked to alliance chat. Use \`/link-channel\` first.`,
         flags: 64
       });
     }
 
     if (!value) {
       return interaction.reply({
-        content: `Current prefix: \`${entry.prefix}\``,
+        content:
+          `**Prefix**\n` +
+          `>>> • Current prefix: \`${entry.prefix}\``,
         flags: 64
       });
     }
@@ -603,7 +631,9 @@ client.on("interactionCreate", async (interaction) => {
       entry.prefix = makeDefaultPrefix(entry.name);
       saveConfig();
       return interaction.reply({
-        content: `Prefix reset to default: ${entry.prefix}`,
+        content:
+          `**Prefix Reset**\n` +
+          `>>> • Prefix reset to: \`${entry.prefix}\``,
         flags: 64
       });
     }
@@ -611,7 +641,9 @@ client.on("interactionCreate", async (interaction) => {
     const normalized = normalizeCustomPrefix(value);
     if (!normalized) {
       return interaction.reply({
-        content: `Invalid prefix. Please provide a non-empty value (max ${PREFIX_MAX_LEN} characters before brackets).`,
+        content:
+          `**Prefix Error**\n` +
+          `>>> • Invalid prefix. Provide a non-empty value (max ${PREFIX_MAX_LEN} chars before brackets).`,
         flags: 64
       });
     }
@@ -620,16 +652,22 @@ client.on("interactionCreate", async (interaction) => {
     saveConfig();
 
     return interaction.reply({
-      content: `Prefix updated to: \`${normalized}\``,
+      content:
+        `**Prefix Updated**\n` +
+        `>>> • New prefix: \`${normalized}\``,
       flags: 64
     });
   }
 
+  // ------------------------------
   // /servers
+  // ------------------------------
   if (interaction.commandName === "servers") {
     if (!getGuildConfig(guildId)) {
       return interaction.reply({
-        content: `This server is not linked to alliance chat, so \`/servers\` is unavailable here.`,
+        content:
+          `**Alliance Servers**\n` +
+          `>>> • This server is not linked to alliance chat.`,
         flags: 64
       });
     }
@@ -638,31 +676,44 @@ client.on("interactionCreate", async (interaction) => {
     const lines = entries.map(([id, data]) => `• ${data.name} — ${data.prefix}`);
 
     return interaction.reply({
-      content: `Alliance Servers (${entries.length}):\n${lines.join("\n")}`,
+      content:
+        `**Alliance Servers (${entries.length})**\n` +
+        `>>> ${lines.join("\n")}`,
       flags: 64
     });
   }
 
+  // ------------------------------
   // /debug
+  // ------------------------------
   if (interaction.commandName === "debug") {
     const id = interaction.options.getString("message_id");
     const entry = getEntry(id);
 
     if (!entry) {
       return interaction.reply({
-        content: `No mapping found for message ID: ${id}`,
+        content:
+          `**Message Mapping**\n` +
+          `>>> • No mapping found for: \`${id}\``,
         flags: 64
       });
     }
 
+    // Resolve guild name
+    const originGuild = client.guilds.cache.get(entry.originGuildId || entry.guildId);
+    const originName = originGuild?.name || "Unknown";
+
+    // Timestamp formatting
+    const ts = Math.floor((entry.timestamp || nowMs()) / 1000);
+
     return interaction.reply({
       content:
-        `**Mapping for ${id}:**\n` +
-        `Type: ${entry.type}\n` +
-        `Origin ID: ${entry.originId}\n` +
-        `Origin Guild: ${entry.originGuildId || entry.guildId}\n` +
-        (entry.relays ? `Relays: ${entry.relays.length}` : "") +
-        `\nTimestamp: ${entry.timestamp}`,
+        `**Message Mapping**\n` +
+        `>>> • Type: ${entry.type}\n` +
+        `• Origin ID: \`${entry.originId}\`\n` +
+        `• Origin Guild: **${originName}** (\`${entry.originGuildId || entry.guildId}\`)\n` +
+        (entry.relays ? `• Relays: ${entry.relays.length}\n` : "") +
+        `• Timestamp: <t:${ts}:f>`,
       flags: 64
     });
   }
@@ -688,14 +739,58 @@ client.on("interactionCreate", async (interaction) => {
     saveMessageMap();
 
     return interaction.reply({
-      content: `Repair complete. ${repaired} entries were fixed or removed.`,
+      content:
+        `**Repair Complete**\n` +
+        `>>> • Fixed or removed: ${repaired} entries`,
       flags: 64
     });
   }
 });
 
+
 // ======================================================
-// 14. Relay Queue
+// 14. Rotating Status (Sequential, Every 20 Minutes)
+// ======================================================
+
+function getCustomPrefixes() {
+  const prefixes = [];
+
+  for (const g of Object.values(config.guilds)) {
+    if (!g.prefix) continue;
+
+    const defaultPrefix = makeDefaultPrefix(g.name);
+
+    if (g.prefix !== defaultPrefix) {
+prefixes.push(g.prefix.replace(/^\[|\]$/g, ""));
+    }
+  }
+
+  return prefixes;
+}
+
+let statusIndex = 0;
+
+function rotateStatus() {
+  const list = getCustomPrefixes();
+  if (list.length === 0) return;
+
+  if (statusIndex >= list.length) statusIndex = 0;
+
+  const choice = list[statusIndex++];
+  client.user.setPresence({
+    activities: [{ name: choice }],
+    status: "online"
+  });
+
+  console.log(`Status updated → ${choice}`);
+}
+
+rotateStatus();
+setInterval(rotateStatus, 20 * 60 * 1000);
+
+
+// ======================================================
+// 15. Relay Queue
 // ======================================================
 
 const relayQueue = [];
@@ -720,7 +815,7 @@ async function processRelayQueue() {
 
 
 // ======================================================
-// 15. Message Relay Handler (Optimized)
+// 16. Message Relay Handler (Optimized)
 // ======================================================
 
 client.on("messageCreate", async (msg) => {
@@ -842,9 +937,8 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
   setOriginEntry(msg.id, originGuild.id, relays);
 });
 
-
 // ======================================================
-// 16. Message Update Handler
+// 17. Message Update Handler
 // ======================================================
 
 client.on("messageUpdate", async (oldMsg, newMsg) => {
@@ -878,7 +972,7 @@ client.on("messageUpdate", async (oldMsg, newMsg) => {
 
 
 // ======================================================
-// 17. Message Delete Handler
+// 18. Message Delete Handler
 // ======================================================
 
 client.on("messageDelete", async (msg) => {
@@ -913,7 +1007,7 @@ client.on("messageDelete", async (msg) => {
 
 
 // ======================================================
-// 18. Reaction Handlers (Optimized)
+// 19. Reaction Handlers (Optimized)
 // ======================================================
 
 client.on("messageReactionAdd", async (reaction, user) => {
@@ -950,7 +1044,7 @@ client.on("messageReactionRemove", async (reaction, user) => {
 
 
 // ======================================================
-// 19. Graceful Shutdown (Essential for Mamba)
+// 20. Graceful Shutdown (Essential for Mamba)
 // ======================================================
 
 process.on("SIGTERM", () => {
@@ -962,7 +1056,7 @@ process.on("SIGTERM", () => {
 
 
 // ======================================================
-// 20. Login
+// 21. Login
 // ======================================================
 
 client.login(
