@@ -936,4 +936,8 @@ client.on("messageReactionRemove", async (reaction, user) => {
 // 19. Login
 // ======================================================
 
-client.login(process.env.TOKEN);
+client.login(
+    process.env.TOKEN ||
+    process.env.BOT_TOKEN ||
+    process.env.DISCORD_TOKEN
+);
