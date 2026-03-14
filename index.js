@@ -466,7 +466,7 @@ const commands = [
   }
 ];
 
-client.once("ready", async () => {
+client.once("clientReady", async () => {
   const rest = new REST({ version: "10" }).setToken(
     process.env.TOKEN ||
     process.env.BOT_TOKEN ||
