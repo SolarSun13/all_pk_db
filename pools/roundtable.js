@@ -219,8 +219,8 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
 
 
   // ======================================================
-  // REACTIONS — FIXED (NO WEBHOOKS)
-// ======================================================
+  // REACTIONS — TWO-WAY, NO DUPLICATES
+  // ======================================================
   client.on("messageReactionAdd", async (reaction, user) => {
     try {
       if (reaction.partial) await reaction.fetch();
@@ -229,14 +229,46 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
       if (!reaction.emoji || reaction.emoji.id) return; // unicode only
 
       const pool = "roundtable";
-      const targets = getOriginAndRelays(pool, reaction.message.id);
+
+      // Resolve origin + relays whether this is origin or mirror
+      let targets = getOriginAndRelays(pool, reaction.message.id);
+      if (!targets) {
+        const mirrorEntry = getEntry(pool, reaction.message.id);
+        if (mirrorEntry && mirrorEntry.type === "mirror") {
+          targets = getOriginAndRelays(pool, mirrorEntry.originId);
+        }
+      }
       if (!targets) return;
 
       const emoji = reaction.emoji.name;
+      const sourceGuildId = reaction.message.guild.id;
+      const sourceMessageId = reaction.message.id;
 
+      const isFromOrigin =
+        sourceGuildId === targets.originGuildId &&
+        sourceMessageId === targets.originId;
+
+      // React on origin if reaction came from a mirror
+      if (!isFromOrigin) {
+        const originChannelId = getRoundTableChannel(targets.originGuildId);
+        if (originChannelId) {
+          const originChannel = await client.channels.fetch(originChannelId).catch(() => null);
+          if (originChannel) {
+            const originMsg = await originChannel.messages.fetch(targets.originId).catch(() => null);
+            if (originMsg) {
+              await originMsg.react(emoji).catch(() => {});
+            }
+          }
+        }
+      }
+
+      // React on all mirrors except the source message
       for (const relay of targets.relays) {
+        if (!relay.webhook_message_id) continue;
+        if (relay.guild_id === sourceGuildId && relay.webhook_message_id === sourceMessageId) continue;
+
         const channelId = getRoundTableChannel(relay.guild_id);
-        if (!channelId || !relay.webhook_message_id) continue;
+        if (!channelId) continue;
 
         const channel = await client.channels.fetch(channelId).catch(() => null);
         if (!channel) continue;
@@ -258,14 +290,49 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
       if (!reaction.emoji || reaction.emoji.id) return;
 
       const pool = "roundtable";
-      const targets = getOriginAndRelays(pool, reaction.message.id);
+
+      // Resolve origin + relays whether this is origin or mirror
+      let targets = getOriginAndRelays(pool, reaction.message.id);
+      if (!targets) {
+        const mirrorEntry = getEntry(pool, reaction.message.id);
+        if (mirrorEntry && mirrorEntry.type === "mirror") {
+          targets = getOriginAndRelays(pool, mirrorEntry.originId);
+        }
+      }
       if (!targets) return;
 
       const emoji = reaction.emoji.name;
+      const sourceGuildId = reaction.message.guild.id;
+      const sourceMessageId = reaction.message.id;
 
+      const isFromOrigin =
+        sourceGuildId === targets.originGuildId &&
+        sourceMessageId === targets.originId;
+
+      // Remove from origin if reaction came from a mirror
+      if (!isFromOrigin) {
+        const originChannelId = getRoundTableChannel(targets.originGuildId);
+        if (originChannelId) {
+          const originChannel = await client.channels.fetch(originChannelId).catch(() => null);
+          if (originChannel) {
+            const originMsg = await originChannel.messages.fetch(targets.originId).catch(() => null);
+            if (originMsg) {
+              const reactionObj = originMsg.reactions.cache.get(emoji);
+              if (reactionObj) {
+                await reactionObj.users.remove(client.user.id).catch(() => {});
+              }
+            }
+          }
+        }
+      }
+
+      // Remove from all mirrors except the source message
       for (const relay of targets.relays) {
+        if (!relay.webhook_message_id) continue;
+        if (relay.guild_id === sourceGuildId && relay.webhook_message_id === sourceMessageId) continue;
+
         const channelId = getRoundTableChannel(relay.guild_id);
-        if (!channelId || !relay.webhook_message_id) continue;
+        if (!channelId) continue;
 
         const channel = await client.channels.fetch(channelId).catch(() => null);
         if (!channel) continue;
