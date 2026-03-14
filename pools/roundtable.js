@@ -66,11 +66,13 @@ export function registerRoundTableHandlers(client) {
 
     let body = msg.content || "";
 
+    // Attachments
     if (msg.attachments.size > 0) {
       const urls = [...msg.attachments.values()].map(a => a.url);
       body = (body + "\n" + urls.join("\n")).trim();
     }
 
+    // Tenor embeds
     if (msg.embeds.length > 0) {
       for (const e of msg.embeds) {
         const isTenor = (e.provider?.name === "Tenor") || (e.url?.includes("tenor.com"));
@@ -80,7 +82,7 @@ export function registerRoundTableHandlers(client) {
       }
     }
 
-    const isReply = !!msg.reference?.messageId;
+    // Reply linking
     const repliedToId = msg.reference?.messageId || null;
     const replyInfo = repliedToId ? getOriginAndRelays(pool, repliedToId) : null;
 
@@ -108,6 +110,7 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
         }
       : null;
 
+    // Relay to all other Round Table servers
     const relays = [];
     const config = getConfig();
 
@@ -118,13 +121,8 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
       enqueue(async () => {
         const contentParts = [];
 
-        if (replyHeader) {
-          contentParts.push(replyHeader(guildId));
-        }
-
-        if (body.trim().length > 0) {
-          contentParts.push(body.trim());
-        }
+        if (replyHeader) contentParts.push(replyHeader(guildId));
+        if (body.trim().length > 0) contentParts.push(body.trim());
 
         const payload = {
           username,
@@ -221,14 +219,14 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
 
 
   // ======================================================
-  // REACTIONS
-  // ======================================================
+  // REACTIONS — FIXED (NO WEBHOOKS)
+// ======================================================
   client.on("messageReactionAdd", async (reaction, user) => {
     try {
       if (reaction.partial) await reaction.fetch();
       if (user.bot) return;
       if (!isRoundTableLinked(reaction.message)) return;
-      if (!reaction.emoji || reaction.emoji.id) return; // Only unicode
+      if (!reaction.emoji || reaction.emoji.id) return; // unicode only
 
       const pool = "roundtable";
       const targets = getOriginAndRelays(pool, reaction.message.id);
@@ -237,16 +235,17 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
       const emoji = reaction.emoji.name;
 
       for (const relay of targets.relays) {
-        const webhook = getRoundTableWebhook(relay.guild_id);
-        if (!webhook || !relay.webhook_message_id) continue;
+        const channelId = getRoundTableChannel(relay.guild_id);
+        if (!channelId || !relay.webhook_message_id) continue;
 
-        enqueue(async () => {
-          const url = `${webhook}/messages/${relay.webhook_message_id}/reactions/${encodeURIComponent(emoji)}/@me`;
-          await postWebhook(url, {});
-        });
+        const channel = await client.channels.fetch(channelId).catch(() => null);
+        if (!channel) continue;
+
+        const msg = await channel.messages.fetch(relay.webhook_message_id).catch(() => null);
+        if (!msg) continue;
+
+        await msg.react(emoji).catch(() => {});
       }
-
-      processQueue();
     } catch {}
   });
 
@@ -265,16 +264,20 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
       const emoji = reaction.emoji.name;
 
       for (const relay of targets.relays) {
-        const webhook = getRoundTableWebhook(relay.guild_id);
-        if (!webhook || !relay.webhook_message_id) continue;
+        const channelId = getRoundTableChannel(relay.guild_id);
+        if (!channelId || !relay.webhook_message_id) continue;
 
-        enqueue(async () => {
-          const url = `${webhook}/messages/${relay.webhook_message_id}/reactions/${encodeURIComponent(emoji)}/@me`;
-          await deleteWebhook(url);
-        });
+        const channel = await client.channels.fetch(channelId).catch(() => null);
+        if (!channel) continue;
+
+        const msg = await channel.messages.fetch(relay.webhook_message_id).catch(() => null);
+        if (!msg) continue;
+
+        const reactionObj = msg.reactions.cache.get(emoji);
+        if (!reactionObj) continue;
+
+        await reactionObj.users.remove(client.user.id).catch(() => {});
       }
-
-      processQueue();
     } catch {}
   });
 }

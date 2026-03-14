@@ -60,12 +60,10 @@ export function registerAllianceHandlers(client) {
     const pool = "alliance";
     const originGuild = msg.guild;
 
-    // Prefix + username
     const prefix = getPrefix(originGuild.id, originGuild.name);
     const username = `${prefix} ${msg.author.username}`;
     const avatar = msg.author.displayAvatarURL();
 
-    // Build message body
     let body = msg.content || "";
 
     // Attachments
@@ -85,7 +83,6 @@ export function registerAllianceHandlers(client) {
     }
 
     // Reply linking
-    const isReply = !!msg.reference?.messageId;
     const repliedToId = msg.reference?.messageId || null;
     const replyInfo = repliedToId ? getOriginAndRelays(pool, repliedToId) : null;
 
@@ -124,13 +121,8 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
       enqueue(async () => {
         const contentParts = [];
 
-        if (replyHeader) {
-          contentParts.push(replyHeader(guildId));
-        }
-
-        if (body.trim().length > 0) {
-          contentParts.push(body.trim());
-        }
+        if (replyHeader) contentParts.push(replyHeader(guildId));
+        if (body.trim().length > 0) contentParts.push(body.trim());
 
         const payload = {
           username,
@@ -160,8 +152,6 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
     }
 
     processQueue();
-
-    // Save origin entry
     setOrigin(pool, msg.id, originGuild.id, relays);
   });
 
@@ -229,14 +219,14 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
 
 
   // ======================================================
-  // REACTIONS
-  // ======================================================
+  // REACTIONS — FIXED (NO WEBHOOKS)
+// ======================================================
   client.on("messageReactionAdd", async (reaction, user) => {
     try {
       if (reaction.partial) await reaction.fetch();
       if (user.bot) return;
       if (!isAllianceLinked(reaction.message)) return;
-      if (!reaction.emoji || reaction.emoji.id) return; // Only unicode
+      if (!reaction.emoji || reaction.emoji.id) return; // unicode only
 
       const pool = "alliance";
       const targets = getOriginAndRelays(pool, reaction.message.id);
@@ -245,16 +235,17 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
       const emoji = reaction.emoji.name;
 
       for (const relay of targets.relays) {
-        const webhook = getAllianceWebhook(relay.guild_id);
-        if (!webhook || !relay.webhook_message_id) continue;
+        const channelId = getAllianceChannel(relay.guild_id);
+        if (!channelId || !relay.webhook_message_id) continue;
 
-        enqueue(async () => {
-          const url = `${webhook}/messages/${relay.webhook_message_id}/reactions/${encodeURIComponent(emoji)}/@me`;
-          await postWebhook(url, {}); // Discord accepts empty POST for reactions
-        });
+        const channel = await client.channels.fetch(channelId).catch(() => null);
+        if (!channel) continue;
+
+        const msg = await channel.messages.fetch(relay.webhook_message_id).catch(() => null);
+        if (!msg) continue;
+
+        await msg.react(emoji).catch(() => {});
       }
-
-      processQueue();
     } catch {}
   });
 
@@ -273,16 +264,20 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
       const emoji = reaction.emoji.name;
 
       for (const relay of targets.relays) {
-        const webhook = getAllianceWebhook(relay.guild_id);
-        if (!webhook || !relay.webhook_message_id) continue;
+        const channelId = getAllianceChannel(relay.guild_id);
+        if (!channelId || !relay.webhook_message_id) continue;
 
-        enqueue(async () => {
-          const url = `${webhook}/messages/${relay.webhook_message_id}/reactions/${encodeURIComponent(emoji)}/@me`;
-          await deleteWebhook(url);
-        });
+        const channel = await client.channels.fetch(channelId).catch(() => null);
+        if (!channel) continue;
+
+        const msg = await channel.messages.fetch(relay.webhook_message_id).catch(() => null);
+        if (!msg) continue;
+
+        const reactionObj = msg.reactions.cache.get(emoji);
+        if (!reactionObj) continue;
+
+        await reactionObj.users.remove(client.user.id).catch(() => {});
       }
-
-      processQueue();
     } catch {}
   });
 }
