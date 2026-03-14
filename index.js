@@ -467,8 +467,17 @@ const commands = [
 ];
 
 client.once("clientReady", async () => {
-  const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
-  await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
+  const rest = new REST({ version: "10" }).setToken(
+    process.env.TOKEN ||
+    process.env.BOT_TOKEN ||
+    process.env.DISCORD_TOKEN
+  );
+
+  await rest.put(
+    Routes.applicationCommands(client.user.id),
+    { body: commands }
+  );
+
   pruneMessageMap();
 });
 
