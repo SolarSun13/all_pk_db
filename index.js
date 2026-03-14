@@ -23,6 +23,8 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 const ENTRY_TYPE_ORIGIN = "origin";
 const ENTRY_TYPE_MIRROR = "mirror";
 
+const MAX_QUEUE_SIZE = 5000; // Production-grade safety cap
+
 
 // ======================================================
 // 3. Client Initialization
@@ -40,11 +42,20 @@ const client = new Client({
 
 
 // ======================================================
-// 4. Config + Message Map Loading + Debounced Writes
+// 4. Config + Message Map Loading + Atomic Writes
 // ======================================================
 
 let config;
 let messageMap;
+
+function atomicWrite(path, data) {
+  try {
+    fs.writeFileSync(path + ".tmp", data);
+    fs.renameSync(path + ".tmp", path);
+  } catch (err) {
+    console.error("Write error:", err.message);
+  }
+}
 
 try {
   config = JSON.parse(fs.readFileSync("./config.json", "utf8"));
@@ -69,11 +80,11 @@ function scheduleWrite() {
   writeTimer = setTimeout(() => {
     writeTimer = null;
     if (pendingConfigWrite) {
-      fs.writeFileSync("./config.json", JSON.stringify(config, null, 2));
+      atomicWrite("./config.json", JSON.stringify(config, null, 2));
       pendingConfigWrite = false;
     }
     if (pendingMapWrite) {
-      fs.writeFileSync("./messageMap.json", JSON.stringify(messageMap, null, 2));
+      atomicWrite("./messageMap.json", JSON.stringify(messageMap, null, 2));
       pendingMapWrite = false;
     }
   }, WRITE_DEBOUNCE_MS);
@@ -161,9 +172,9 @@ function normalizeCustomPrefix(raw) {
   if (!raw) return null;
   let trimmed = raw.trim();
   if (!trimmed) return null;
-  if (trimmed.length > PREFIX_MAX_LEN) trimmed = trimmed.slice(0, PREFIX_MAX_LEN) + "…";
-  trimmed = trimmed.replace(/^\[/, "").replace(/\]$/, "");
-  return `[${trimmed}]`;
+if (trimmed.length > PREFIX_MAX_LEN) trimmed = trimmed.slice(0, PREFIX_MAX_LEN) + "…";
+trimmed = trimmed.replace(/^\[/, "").replace(/\]$/, "");
+return `[${trimmed}]`;
 }
 
 function getGuildPrefix(guildId, fallbackName) {
@@ -474,8 +485,8 @@ const commands = [
   { name: "ping", description: "Check bot status." }
 ];
 
-client.once("clientReady", async () => {
-  console.log(`Logged in as ${client.user.tag}`);
+client.once("ready", async () => {
+  console.log(`Bot ready as ${client.user.tag}`);
 
   const rest = new REST({ version: "10" }).setToken(
     process.env.TOKEN ||
@@ -488,13 +499,9 @@ client.once("clientReady", async () => {
     { body: commands }
   );
 
-  console.log("Slash commands registered.");
-
   pruneMessageMap();
 
-  // ------------------------------
   // Start rotating status *after* login
-  // ------------------------------
   rotateStatus();
   setInterval(rotateStatus, 20 * 60 * 1000);
 });
@@ -525,16 +532,12 @@ client.on("interactionCreate", async (interaction) => {
     return true;
   };
 
-  // ------------------------------
   // /ping
-  // ------------------------------
   if (interaction.commandName === "ping") {
     return interaction.reply({ content: "Pong!", flags: 64 });
   }
 
-  // ------------------------------
   // /link-channel
-  // ------------------------------
   if (interaction.commandName === "link-channel") {
     if (!(await requireManageServer())) return;
 
@@ -564,9 +567,7 @@ client.on("interactionCreate", async (interaction) => {
     });
   }
 
-  // ------------------------------
   // /unlink-channel
-  // ------------------------------
   if (interaction.commandName === "unlink-channel") {
     if (!(await requireManageServer())) return;
 
@@ -581,9 +582,7 @@ client.on("interactionCreate", async (interaction) => {
     });
   }
 
-  // ------------------------------
   // /status
-  // ------------------------------
   if (interaction.commandName === "status") {
     const data = getGuildConfig(guildId);
 
@@ -606,9 +605,7 @@ client.on("interactionCreate", async (interaction) => {
     });
   }
 
-  // ------------------------------
   // /prefix
-  // ------------------------------
   if (interaction.commandName === "prefix") {
     if (!(await requireManageServer())) return;
 
@@ -665,9 +662,7 @@ client.on("interactionCreate", async (interaction) => {
     });
   }
 
-  // ------------------------------
   // /servers
-  // ------------------------------
   if (interaction.commandName === "servers") {
     if (!getGuildConfig(guildId)) {
       return interaction.reply({
@@ -689,9 +684,7 @@ client.on("interactionCreate", async (interaction) => {
     });
   }
 
-  // ------------------------------
   // /debug
-  // ------------------------------
   if (interaction.commandName === "debug") {
     const id = interaction.options.getString("message_id");
     const entry = getEntry(id);
@@ -705,11 +698,9 @@ client.on("interactionCreate", async (interaction) => {
       });
     }
 
-    // Resolve guild name
     const originGuild = client.guilds.cache.get(entry.originGuildId || entry.guildId);
     const originName = originGuild?.name || "Unknown";
 
-    // Timestamp formatting
     const ts = Math.floor((entry.timestamp || nowMs()) / 1000);
 
     return interaction.reply({
@@ -724,9 +715,7 @@ client.on("interactionCreate", async (interaction) => {
     });
   }
 
-  // ------------------------------
   // /repair
-  // ------------------------------
   if (interaction.commandName === "repair") {
     if (!(await requireManageServer())) return;
 
@@ -777,26 +766,36 @@ prefixes.push(g.prefix.replace(/^\[|\]$/g, ""));
 let statusIndex = 0;
 
 function rotateStatus() {
-  const list = getCustomPrefixes();
-  if (list.length === 0) return;
+  try {
+    const list = getCustomPrefixes();
+    if (list.length === 0) return;
 
-  if (statusIndex >= list.length) statusIndex = 0;
+    if (statusIndex >= list.length) statusIndex = 0;
 
-  const choice = list[statusIndex++];
-  client.user.setPresence({
-    activities: [{ name: choice }],
-    status: "online"
-  });
-
-  console.log(`Status updated → ${choice}`);
+    const choice = list[statusIndex++];
+    client.user.setPresence({
+      activities: [{ name: choice }],
+      status: "online"
+    });
+  } catch (err) {
+    console.error("Presence error:", err.message);
+  }
 }
 
+
 // ======================================================
-// 15. Relay Queue
+// 15. Relay Queue (Hardened)
 // ======================================================
 
 const relayQueue = [];
 let relayProcessing = false;
+
+function enqueueRelay(task) {
+  if (relayQueue.length >= MAX_QUEUE_SIZE) {
+    relayQueue.shift();
+  }
+  relayQueue.push(task);
+}
 
 async function processRelayQueue() {
   if (relayProcessing) return;
@@ -817,7 +816,82 @@ async function processRelayQueue() {
 
 
 // ======================================================
-// 16. Message Relay Handler (Optimized)
+// 16. Webhook Helpers (Lightweight Retry)
+// ======================================================
+
+async function postWebhookWithRetry(url, payload) {
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) return res;
+
+    if (res.status === 429 || (res.status >= 500 && res.status <= 599)) {
+      await new Promise(r => setTimeout(r, 300));
+      return await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+    }
+
+    return res;
+  } catch (err) {
+    console.error("Webhook POST error:", err.message);
+    return null;
+  }
+}
+
+async function patchWebhookWithRetry(url, payload) {
+  try {
+    const res = await fetch(url, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) return res;
+
+    if (res.status === 429 || (res.status >= 500 && res.status <= 599)) {
+      await new Promise(r => setTimeout(r, 300));
+      return await fetch(url, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+    }
+
+    return res;
+  } catch (err) {
+    console.error("Webhook PATCH error:", err.message);
+    return null;
+  }
+}
+
+async function deleteWebhookWithRetry(url) {
+  try {
+    const res = await fetch(url, { method: "DELETE" });
+
+    if (res.ok) return res;
+
+    if (res.status === 429 || (res.status >= 500 && res.status <= 599)) {
+      await new Promise(r => setTimeout(r, 300));
+      return await fetch(url, { method: "DELETE" });
+    }
+
+    return res;
+  } catch (err) {
+    console.error("Webhook DELETE error:", err.message);
+    return null;
+  }
+}
+
+
+// ======================================================
+// 17. Message Relay Handler (Optimized)
 // ======================================================
 
 client.on("messageCreate", async (msg) => {
@@ -843,7 +917,7 @@ client.on("messageCreate", async (msg) => {
       const repliedUser = msg.mentions?.repliedUser;
       let repliedName = repliedUser ? repliedUser.username : "original message";
 
-repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
+      repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
 
       const namePart = `${originPrefix} ${repliedName}`;
 
@@ -883,11 +957,8 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
   for (const [guildId, data] of Object.entries(config.guilds)) {
     if (guildId === originGuild.id) continue;
 
-    relayQueue.push(async () => {
-      if (!data.webhook) {
-        console.warn(`Missing webhook for guild ${guildId}`);
-        return;
-      }
+    enqueueRelay(async () => {
+      if (!data.webhook) return;
 
       const contentParts = [];
 
@@ -906,17 +977,14 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
         content
       };
 
-      const response = await fetch(data.webhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
+      const response = await postWebhookWithRetry(data.webhook, payload);
       let webhookMessageId = null;
 
       try {
-        const text = await response.text();
-        if (text) webhookMessageId = JSON.parse(text)?.id || null;
+        if (response && response.ok) {
+          const text = await response.text();
+          if (text) webhookMessageId = JSON.parse(text)?.id || null;
+        }
       } catch {}
 
       if (!webhookMessageId) {
@@ -940,7 +1008,7 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
 });
 
 // ======================================================
-// 17. Message Update Handler
+// 18. Message Update Handler
 // ======================================================
 
 client.on("messageUpdate", async (oldMsg, newMsg) => {
@@ -956,15 +1024,11 @@ client.on("messageUpdate", async (oldMsg, newMsg) => {
     const cfg = getGuildConfig(relay.guild_id);
     if (!cfg || !relay.webhook_message_id) continue;
 
-    relayQueue.push(async () => {
-      await fetch(`${cfg.webhook}/messages/${relay.webhook_message_id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content: newMsg.content || "",
-          username: `${prefix} ${newMsg.author.username}`,
-          avatar_url: newMsg.author.displayAvatarURL()
-        })
+    enqueueRelay(async () => {
+      await patchWebhookWithRetry(`${cfg.webhook}/messages/${relay.webhook_message_id}`, {
+        content: newMsg.content || "",
+        username: `${prefix} ${newMsg.author.username}`,
+        avatar_url: newMsg.author.displayAvatarURL()
       }).catch(() => {});
     });
   }
@@ -974,7 +1038,7 @@ client.on("messageUpdate", async (oldMsg, newMsg) => {
 
 
 // ======================================================
-// 18. Message Delete Handler
+// 19. Message Delete Handler
 // ======================================================
 
 client.on("messageDelete", async (msg) => {
@@ -990,11 +1054,9 @@ client.on("messageDelete", async (msg) => {
     const cfg = getGuildConfig(relay.guild_id);
     if (!cfg) continue;
 
-    relayQueue.push(async () => {
+    enqueueRelay(async () => {
       if (relay.webhook_message_id) {
-        await fetch(`${cfg.webhook}/messages/${relay.webhook_message_id}`, {
-          method: "DELETE"
-        }).catch(() => {});
+        await deleteWebhookWithRetry(`${cfg.webhook}/messages/${relay.webhook_message_id}`).catch(() => {});
         delete messageMap[relay.webhook_message_id];
       }
     });
@@ -1009,7 +1071,7 @@ client.on("messageDelete", async (msg) => {
 
 
 // ======================================================
-// 19. Reaction Handlers (Optimized)
+// 20. Reaction Handlers (Optimized)
 // ======================================================
 
 client.on("messageReactionAdd", async (reaction, user) => {
@@ -1023,7 +1085,7 @@ client.on("messageReactionAdd", async (reaction, user) => {
     const targets = getReactionTargetsForMessage(reaction.message);
     if (targets.length === 0) return;
 
-    relayQueue.push(() => applyReactionToTargets("add", emoji, targets, reaction.message));
+    enqueueRelay(() => applyReactionToTargets("add", emoji, targets, reaction.message));
     processRelayQueue();
   } catch {}
 });
@@ -1039,26 +1101,45 @@ client.on("messageReactionRemove", async (reaction, user) => {
     const targets = getReactionTargetsForMessage(reaction.message);
     if (targets.length === 0) return;
 
-    relayQueue.push(() => applyReactionToTargets("remove", emoji, targets, reaction.message));
+    enqueueRelay(() => applyReactionToTargets("remove", emoji, targets, reaction.message));
     processRelayQueue();
   } catch {}
 });
 
 
 // ======================================================
-// 20. Graceful Shutdown (Essential for Mamba)
+// 21. Graceful Shutdown & Error Guards
 // ======================================================
 
+function gracefulExit(code) {
+  try {
+    saveConfig();
+    saveMessageMap();
+  } catch {}
+  process.exit(code);
+}
+
 process.on("SIGTERM", () => {
-  console.log("Shutting down...");
-  saveConfig();
-  saveMessageMap();
-  process.exit(0);
+  console.log("Shutting down (SIGTERM)...");
+  gracefulExit(0);
+});
+
+process.on("SIGINT", () => {
+  console.log("Shutting down (SIGINT)...");
+  gracefulExit(0);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled rejection:", reason);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught exception:", err);
 });
 
 
 // ======================================================
-// 21. Login
+// 22. Login
 // ======================================================
 
 client.login(
