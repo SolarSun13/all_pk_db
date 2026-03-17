@@ -9,7 +9,7 @@ import {
   Partials,
 } from "discord.js";
 
-import { registerSlashCommands, registerCommandHandler } from "./commands.js";
+import { registerSlashCommands, registerCommandHandler } from "./commands/commands.js";
 import { registerAllianceHandlers } from "./pools/alliance.js";
 import { registerRoundTableHandlers } from "./pools/roundtable.js";
 import { startPresenceRotation } from "./core/presence.js";
