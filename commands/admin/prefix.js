@@ -29,8 +29,7 @@ export async function execute(interaction) {
 
     const embed = createEmbed(
       "Server Prefix",
-      "**Current Prefix**\n" +
-      `\`${current}\``
+      "Current prefix - " + `\`${current}\``
     );
 
     return interaction.reply({
@@ -57,7 +56,7 @@ export async function execute(interaction) {
 
     const embed = createEmbed(
       "Server Prefix",
-      "**Prefix Reset To**\n" +
+      "**Prefix reset to**\n" +
       `\`${reset}\``
     );
 
@@ -73,7 +72,7 @@ export async function execute(interaction) {
   if (!updated) {
     const embed = createEmbed(
       "Server Prefix",
-      "Could not set prefix. Make sure this server is linked first."
+      "\\⚠️ Could not set prefix. Make sure this server is linked first."
     );
 
     return interaction.reply({
@@ -84,8 +83,7 @@ export async function execute(interaction) {
 
   const embed = createEmbed(
     "Server Prefix",
-    "**Prefix Updated To**\n" +
-    `\`${updated}\``
+    "\\✅ Prefix updated to - " + `\`${updated}\``
   );
 
   await interaction.reply({

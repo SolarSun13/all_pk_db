@@ -6,7 +6,7 @@ import { createEmbed } from "../../embed.js";
 
 export const data = {
   name: "link-channel",
-  description: "Link this channel to a pool",
+  description: "Link this channel to a chat pool",
   dm_permission: false,
   default_member_permissions: PermissionFlagsBits.ManageGuild.toString(),
   options: [
@@ -32,7 +32,7 @@ export async function execute(interaction) {
   if (channel.type !== ChannelType.GuildText) {
     const embed = createEmbed(
       "Link Channel",
-      "You can only link **text channels**."
+      "You can only link text channels."
     );
 
     return interaction.reply({
@@ -63,10 +63,7 @@ export async function execute(interaction) {
 
   const embed = createEmbed(
     "Link Channel",
-    "**Linked Channel**\n" +
-    `<#${channel.id}>\n\n` +
-    "**Pool**\n" +
-    `${pool === "alliance" ? "Alliance Chat" : "Round Table"}`
+    "\\✅ " + `**${pool === "alliance" ? "Alliance Chat" : "Round Table"}**` + " pool successfully linked to " + `<#${channel.id}>`
   );
 
   await interaction.reply({

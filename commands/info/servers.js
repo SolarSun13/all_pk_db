@@ -2,6 +2,7 @@
 
 import { PermissionFlagsBits } from "discord.js";
 import { getConfig } from "../../core/storage.js";
+import { getPrefix } from "../../core/prefixes.js";
 import { createEmbed } from "../../embed.js";
 
 export const data = {
@@ -17,8 +18,14 @@ export async function execute(interaction) {
 
   for (const [guildId, entry] of Object.entries(config.guilds)) {
     if (!entry.alliance?.channel) continue;
-    list.push(entry.name || guildId);
+
+    const prefix = getPrefix(guildId, entry.name);
+    const formatted = `${entry.name} - \`${prefix}\``;
+
+    list.push(formatted);
   }
+
+  list.sort((a, b) => a.localeCompare(b));
 
   if (list.length === 0) {
     const embed = createEmbed(
@@ -34,7 +41,8 @@ export async function execute(interaction) {
 
   const embed = createEmbed(
     "Alliance Servers",
-    list.map(n => `• ${n}`).join("\n")
+    list.map(n => `• ${n}`).join("\n"),
+    "✅ connected to the Alliance Chat pool"
   );
 
   await interaction.reply({

@@ -22,14 +22,12 @@ export async function execute(interaction) {
   // No config entry yet
   if (!entry) {
     const embed = createEmbed(
-      "Server Status",
+      "",
       "**Server Name**\n" +
       `${guild.name}\n\n` +
-      "**Prefix**\n" +
-      "`Not configured`\n\n" +
-      "**Pools**\n" +
-      "• Alliance Chat – _Not linked_\n" +
-      "• Round Table – _Not linked_"
+      "**Prefix**" + "- Not configured\n\n" +
+      "• Alliance Chat – not linked \\⚠️\n" +
+      "• Round Table – not linked \\⚠️"
     );
 
     return interaction.reply({
@@ -38,29 +36,36 @@ export async function execute(interaction) {
     });
   }
 
-  const alliance = entry.alliance?.channel
+  // Alliance pool
+  const allianceLinked = !!entry.alliance?.channel;
+  const allianceChannel = allianceLinked
     ? `<#${entry.alliance.channel}>`
-    : "_Not linked_";
+    : "not linked";
+  const allianceStatus = allianceLinked ? "✅" : "⚠️";
 
-  let roundtable = "_Hidden_";
+  // Round Table pool (hidden unless ManageGuild)
+  let roundtableChannel = "_Hidden_";
+  let roundtableStatus = "";
 
   if (member.permissions.has(PermissionFlagsBits.ManageGuild)) {
-    roundtable = entry.roundtable?.channel
+    const rtLinked = !!entry.roundtable?.channel;
+    roundtableChannel = rtLinked
       ? `<#${entry.roundtable.channel}>`
-      : "_Not linked_";
+      : "not linked";
+    roundtableStatus = rtLinked ? "✅" : "⚠️";
   }
 
   const prefix = getPrefix(guild.id, guild.name);
 
   const embed = createEmbed(
-    "Server Status",
+    "",
     "**Server Name**\n" +
     `${guild.name}\n\n` +
-    "**Prefix**\n" +
-    `\`${prefix}\`\n\n` +
-    "**Pools**\n" +
-    `• Alliance Chat – ${alliance}\n` +
-    `• Round Table – ${roundtable}`
+    "**Prefix** " + `- \`${prefix}\`\n\n` +
+    `**Alliance Chat** – ${allianceChannel}  \\${allianceStatus}\n` +
+    `-# *public or general chat pool*\n\n` +
+    `**Round Table** – ${roundtableChannel}  \\${roundtableStatus}\n` +
+    `-# *private or staff chat pool*`
   );
 
   await interaction.reply({

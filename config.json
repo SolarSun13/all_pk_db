@@ -2,7 +2,7 @@
   "guilds": {
     "1481193205319073805": {
       "name": "App Test",
-      "prefix": "[PHIL]",
+      "prefix": "[TEST]",
       "channel": "1481193206212198503",
       "webhook": "https://discord.com/api/webhooks/1481323706511790242/Ntmp0FTsGCWN8PytNct2nM7ZWJEfrOjuQfsA-ex149c7ppUH9cemk1S1WPk6lRPKFC7v",
       "alliance": {
@@ -26,6 +26,18 @@
       "roundtable": {
         "channel": "1482274563135115438",
         "webhook": "https://discord.com/api/webhooks/1482274666348281937/_YyGKDa6M3BdiR9kWQigpAWsH8ol8IDa-FYNd_RGDIy4E0Cdy6gEHSoCeO83n3XXc1u-"
+      }
+    },
+    "1482000849923477709": {
+      "name": "PHIL (newer)",
+      "prefix": "[PHIL]",
+      "roundtable": {
+        "channel": "1482717834545991781",
+        "webhook": "https://discord.com/api/webhooks/1483404669706305567/VyHaWM9L0TvJ0rkUTajXfXfTLTXNUPAJhVbP3jObv9IxIJLON7wfDPovNiRVLuz4mBlH"
+      },
+      "alliance": {
+        "channel": "1482008739950104700",
+        "webhook": "https://discord.com/api/webhooks/1483407686786744352/3gRUL5UgSyLgZ7Les3NAsMh1CsG9ofUuAkb_wTh0MpUy9hX73Y8PFr9vn5oEzmlg7-Xq"
       }
     }
   }

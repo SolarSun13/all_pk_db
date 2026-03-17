@@ -6,7 +6,7 @@ import { createEmbed } from "../../embed.js";
 
 export const data = {
   name: "unlink-channel",
-  description: "Unlink this channel from a pool",
+  description: "Unlink this channel from a chat pool",
   dm_permission: false,
   default_member_permissions: PermissionFlagsBits.ManageGuild.toString(),
   options: [
@@ -50,10 +50,7 @@ export async function execute(interaction) {
 
   const embed = createEmbed(
     "Unlink Channel",
-    "**Unlinked Channel**\n" +
-    `<#${channel.id}>\n\n` +
-    "**Pool**\n" +
-    `${pool === "alliance" ? "Alliance Chat" : "Round Table"}`
+        "\\⚠️ " + `**${pool === "alliance" ? "Alliance Chat" : "Round Table"}**` + " pool unlinked from " + `<#${channel.id}>`
   );
 
   await interaction.reply({
