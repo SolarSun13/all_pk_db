@@ -3,7 +3,7 @@
 
 import { readdir, stat } from "fs/promises";
 import path from "path";
-import { fileURLToPath } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,6 +20,7 @@ async function loadCommandsFrom(dir) {
     const fullPath = path.join(dir, entry);
     const fileStat = await stat(fullPath);
 
+    // Recurse into subfolders
     if (fileStat.isDirectory()) {
       await loadCommandsFrom(fullPath);
       continue;
@@ -28,8 +29,7 @@ async function loadCommandsFrom(dir) {
     // Only load .js files
     if (!entry.endsWith(".js")) continue;
 
-    import { pathToFileURL } from "url";
-
+    // Windows-safe + Linux-safe dynamic import
     const commandModule = await import(pathToFileURL(fullPath).href);
 
     if (!commandModule.data || !commandModule.execute) {
@@ -49,7 +49,7 @@ async function loadCommandsFrom(dir) {
  * Initialize command loading.
  */
 export async function loadAllCommands() {
-  const commandsDir = __dirname;
+  const commandsDir = __dirname; // /commands folder
   await loadCommandsFrom(commandsDir);
 
   console.log(`Loaded ${commandMap.size} commands.`);
