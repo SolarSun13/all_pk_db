@@ -2,7 +2,7 @@
 
 import { ChannelType, PermissionFlagsBits } from "discord.js";
 import { getConfig, saveConfig } from "../../core/storage.js";
-import { createEmbed, DIVIDER } from "../../embed.js";
+import { createEmbed } from "../../embed.js";
 
 export const data = {
   name: "link-channel",
@@ -32,7 +32,6 @@ export async function execute(interaction) {
   if (channel.type !== ChannelType.GuildText) {
     const embed = createEmbed(
       "Link Channel",
-      `${DIVIDER}\n` +
       "You can only link **text channels**."
     );
 
@@ -64,7 +63,6 @@ export async function execute(interaction) {
 
   const embed = createEmbed(
     "Link Channel",
-    `${DIVIDER}\n` +
     "**Linked Channel**\n" +
     `<#${channel.id}>\n\n` +
     "**Pool**\n" +

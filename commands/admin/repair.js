@@ -2,7 +2,7 @@
 
 import { PermissionFlagsBits } from "discord.js";
 import { prunePool } from "../../core/mapping.js";
-import { createEmbed, DIVIDER } from "../../embed.js";
+import { createEmbed } from "../../embed.js";
 
 export const data = {
   name: "repair",
@@ -17,7 +17,6 @@ export async function execute(interaction) {
 
   const embed = createEmbed(
     "Repair Complete",
-    `${DIVIDER}\n` +
     "Message maps for all pools have been **pruned** and **normalized**."
   );
 

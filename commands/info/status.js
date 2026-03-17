@@ -3,7 +3,7 @@
 import { PermissionFlagsBits } from "discord.js";
 import { getConfig } from "../../core/storage.js";
 import { getPrefix } from "../../core/prefixes.js";
-import { createEmbed, DIVIDER } from "../../embed.js";
+import { createEmbed } from "../../embed.js";
 
 export const data = {
   name: "status",
@@ -23,7 +23,6 @@ export async function execute(interaction) {
   if (!entry) {
     const embed = createEmbed(
       "Server Status",
-      `${DIVIDER}\n` +
       "**Server Name**\n" +
       `${guild.name}\n\n` +
       "**Prefix**\n" +
@@ -55,7 +54,6 @@ export async function execute(interaction) {
 
   const embed = createEmbed(
     "Server Status",
-    `${DIVIDER}\n` +
     "**Server Name**\n" +
     `${guild.name}\n\n` +
     "**Prefix**\n" +

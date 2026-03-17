@@ -2,7 +2,7 @@
 
 import { PermissionFlagsBits } from "discord.js";
 import { getConfig, saveConfig } from "../../core/storage.js";
-import { createEmbed, DIVIDER } from "../../embed.js";
+import { createEmbed } from "../../embed.js";
 
 export const data = {
   name: "unlink-channel",
@@ -35,7 +35,6 @@ export async function execute(interaction) {
   if (!entry || !entry[pool] || entry[pool].channel !== channel.id) {
     const embed = createEmbed(
       "Unlink Channel",
-      `${DIVIDER}\n` +
       `This channel is not linked to the **${pool === "alliance" ? "Alliance Chat" : "Round Table"}** pool.`
     );
 
@@ -51,7 +50,6 @@ export async function execute(interaction) {
 
   const embed = createEmbed(
     "Unlink Channel",
-    `${DIVIDER}\n` +
     "**Unlinked Channel**\n" +
     `<#${channel.id}>\n\n` +
     "**Pool**\n" +

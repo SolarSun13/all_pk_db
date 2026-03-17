@@ -2,7 +2,7 @@
 
 import { PermissionFlagsBits } from "discord.js";
 import { getConfig } from "../../core/storage.js";
-import { createEmbed, DIVIDER } from "../../embed.js";
+import { createEmbed } from "../../embed.js";
 
 export const data = {
   name: "servers",
@@ -23,7 +23,6 @@ export async function execute(interaction) {
   if (list.length === 0) {
     const embed = createEmbed(
       "Alliance Servers",
-      `${DIVIDER}\n` +
       "No servers are currently linked to the Alliance Chat pool."
     );
 
@@ -35,7 +34,6 @@ export async function execute(interaction) {
 
   const embed = createEmbed(
     "Alliance Servers",
-    `${DIVIDER}\n` +
     list.map(n => `• ${n}`).join("\n")
   );
 

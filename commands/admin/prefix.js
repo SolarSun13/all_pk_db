@@ -2,7 +2,7 @@
 
 import { PermissionFlagsBits } from "discord.js";
 import { getPrefix, setPrefix, resetPrefix } from "../../core/prefixes.js";
-import { createEmbed, DIVIDER } from "../../embed.js";
+import { createEmbed } from "../../embed.js";
 
 export const data = {
   name: "prefix",
@@ -29,7 +29,6 @@ export async function execute(interaction) {
 
     const embed = createEmbed(
       "Server Prefix",
-      `${DIVIDER}\n` +
       "**Current Prefix**\n" +
       `\`${current}\``
     );
@@ -47,7 +46,6 @@ export async function execute(interaction) {
     if (!reset) {
       const embed = createEmbed(
         "Server Prefix",
-        `${DIVIDER}\n` +
         "This server is not registered in config yet."
       );
 
@@ -59,7 +57,6 @@ export async function execute(interaction) {
 
     const embed = createEmbed(
       "Server Prefix",
-      `${DIVIDER}\n` +
       "**Prefix Reset To**\n" +
       `\`${reset}\``
     );
@@ -76,7 +73,6 @@ export async function execute(interaction) {
   if (!updated) {
     const embed = createEmbed(
       "Server Prefix",
-      `${DIVIDER}\n` +
       "Could not set prefix. Make sure this server is linked first."
     );
 
@@ -88,7 +84,6 @@ export async function execute(interaction) {
 
   const embed = createEmbed(
     "Server Prefix",
-    `${DIVIDER}\n` +
     "**Prefix Updated To**\n" +
     `\`${updated}\``
   );

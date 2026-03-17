@@ -28,7 +28,9 @@ async function loadCommandsFrom(dir) {
     // Only load .js files
     if (!entry.endsWith(".js")) continue;
 
-    const commandModule = await import(fullPath);
+    import { pathToFileURL } from "url";
+
+    const commandModule = await import(pathToFileURL(fullPath).href);
 
     if (!commandModule.data || !commandModule.execute) {
       console.warn(`⚠️ Skipped invalid command file: ${fullPath}`);
