@@ -2,7 +2,7 @@
 
 import { getConfig } from "../core/storage.js";
 import { getEntry, getOriginAndRelays } from "../core/mapping.js";
-import { createEmbed, DIVIDER } from "../embed.js";
+import { createEmbed } from "../embed.js";
 
 /**
  * Extract a message ID from:
@@ -72,7 +72,6 @@ export function detectPool(guildConfig, channelId, messageId) {
 export function buildDebugEmbed(pool, messageId, entry, origin) {
   return createEmbed(
     "Debug Result",
-    `${DIVIDER}\n` +
     "**Pool**\n" +
     `${pool}\n\n` +
     "**Message ID**\n" +
@@ -99,7 +98,6 @@ export async function debugLookup(interaction, rawInput) {
   if (!pool || !entry) {
     return createEmbed(
       "Debug Result",
-      `${DIVIDER}\n` +
       "Message not found in relay system."
     );
   }
