@@ -18,7 +18,7 @@ export async function execute(interaction) {
   const embed = createEmbed(
     "Repair Complete",
     `${DIVIDER}\n` +
-    "Message maps for both pools have been **pruned** and **normalized**."
+    "Message maps for all pools have been **pruned** and **normalized**."
   );
 
   await interaction.reply({

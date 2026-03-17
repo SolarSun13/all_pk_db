@@ -6,7 +6,7 @@ export const DIVIDER = "━━━━━━━━━━━━━━━━━━�
 
 export function createEmbed(title, description = "") {
   return new EmbedBuilder()
-    .setColor(0x000000) // black theme
+    .setColor(0xffffff) // white theme
     .setTitle(title)
     .setDescription(description);
 }
