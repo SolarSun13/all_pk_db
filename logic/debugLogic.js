@@ -2,7 +2,7 @@
 
 import { getConfig } from "../core/storage.js";
 import { getEntry, getOriginAndRelays } from "../core/mapping.js";
-import { createEmbed, DIVIDER } from "../commands/embed.js";
+import { createEmbed, DIVIDER } from "../embed.js";
 
 /**
  * Extract a message ID from:
