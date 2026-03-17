@@ -1,5 +1,5 @@
 // ======================================================
-// index.js — Main Entry Point
+// index.js — Main Entry Point (Updated for Modular System)
 // ======================================================
 
 import "dotenv/config";
@@ -9,7 +9,12 @@ import {
   Partials,
 } from "discord.js";
 
-import { registerSlashCommands, registerCommandHandler } from "./commands/commands.js";
+import {
+  loadAllCommands,
+  getCommandDataArray,
+  commandMap,
+} from "./commands/commands.js";
+
 import { registerAllianceHandlers } from "./pools/alliance.js";
 import { registerRoundTableHandlers } from "./pools/roundtable.js";
 import { startPresenceRotation } from "./core/presence.js";
@@ -50,11 +55,8 @@ const client = new Client({
 client.once("ready", async () => {
   console.log(`Logged in as ${client.user.tag}`);
 
-  // Register slash commands (global)
-  await registerSlashCommands(client, TOKEN, CLIENT_ID);
-
-  // Register interaction handler
-  registerCommandHandler(client);
+  // Load all commands from /commands/**
+  await loadAllCommands();
 
   // Register pool handlers
   registerAllianceHandlers(client);
@@ -64,6 +66,36 @@ client.once("ready", async () => {
   startPresenceRotation(client);
 
   console.log("Bot is fully initialized.");
+});
+
+
+// ------------------------------------------------------
+// Interaction Handler
+// ------------------------------------------------------
+
+client.on("interactionCreate", async (interaction) => {
+  if (
+    !interaction.isChatInputCommand() &&
+    !interaction.isMessageContextMenuCommand()
+  ) {
+    return;
+  }
+
+  const cmd = commandMap.get(interaction.commandName);
+  if (!cmd) return;
+
+  try {
+    await cmd.execute(interaction);
+  } catch (err) {
+    console.error("Command execution error:", err);
+
+    if (!interaction.replied && !interaction.deferred) {
+      interaction.reply({
+        content: "An error occurred while executing this command.",
+        ephemeral: true,
+      });
+    }
+  }
 });
 
 
