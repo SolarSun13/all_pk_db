@@ -87,7 +87,7 @@ const commandsData = [
       {
         type: 3,
         name: "id",
-        description: "Message ID or message link",
+        description: "Message link or ID",
         required: true,
       },
     ],
@@ -205,7 +205,7 @@ async function handleUnlink(interaction) {
   const config = getConfig();
   const entry = config.guilds[guild.id];
 
-  if (!entry || !entry[pool] || entry[pool].channel !== channel.id) {
+    if (!entry || !entry[pool] || entry[pool].channel !== channel.id) {
     return interaction.reply({
       content: `This channel is not linked to the **${pool}** pool.`,
       ephemeral: true,
@@ -339,26 +339,46 @@ async function handleDebug(interaction) {
   const cfg = getConfig().guilds[guildId];
 
   let pool = null;
+  let entry = null;
 
-  // 1. Try detecting pool from the channel where command was run
-  if (cfg?.roundtable?.channel === channelId) pool = "roundtable";
-  if (cfg?.alliance?.channel === channelId) pool = "alliance";
-
-  // 2. If not found, try mapping lookup
-  if (!pool) {
-    if (getEntry("alliance", messageId)) pool = "alliance";
-    else if (getEntry("roundtable", messageId)) pool = "roundtable";
+  // 1. If command is run in Round Table channel → try Round Table first
+  if (cfg?.roundtable?.channel === channelId) {
+    entry = getEntry("roundtable", messageId);
+    if (entry) pool = "roundtable";
+    else {
+      entry = getEntry("alliance", messageId);
+      if (entry) pool = "alliance";
+    }
   }
 
-  // 3. If still not found, message isn't in relay system
-  if (!pool) {
+  // 2. If command is run in Alliance channel → try Alliance first
+  else if (cfg?.alliance?.channel === channelId) {
+    entry = getEntry("alliance", messageId);
+    if (entry) pool = "alliance";
+    else {
+      entry = getEntry("roundtable", messageId);
+      if (entry) pool = "roundtable";
+    }
+  }
+
+  // 3. If command is run elsewhere → try both
+  else {
+    entry = getEntry("alliance", messageId);
+    if (entry) pool = "alliance";
+    else {
+      entry = getEntry("roundtable", messageId);
+      if (entry) pool = "roundtable";
+    }
+  }
+
+  // 4. If still not found
+  if (!pool || !entry) {
     return interaction.reply({
       content: "Message not found in relay system.",
       ephemeral: true,
     });
   }
 
-  const entry = getEntry(pool, messageId);
   const origin = getOriginAndRelays(pool, messageId);
 
   const embed = new EmbedBuilder()
