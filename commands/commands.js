@@ -47,7 +47,7 @@ async function loadCommandsFrom(dir) {
  * Initialize command loading.
  */
 export async function loadAllCommands() {
-  const commandsDir = path.join(__dirname, "commands");
+  const commandsDir = __dirname;
   await loadCommandsFrom(commandsDir);
 
   console.log(`Loaded ${commandMap.size} commands.`);
