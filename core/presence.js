@@ -7,7 +7,6 @@ import { getAlliancePrefixesForPresence } from "./prefixes.js";
 const ROTATION_INTERVAL_MS = 20 * 60 * 1000; // 20 minutes
 let statusIndex = 0;
 
-
 // ------------------------------------------------------
 // Rotate Presence
 // ------------------------------------------------------
@@ -21,7 +20,7 @@ function rotate(client) {
 
     const choice = list[statusIndex++];
     client.user.setPresence({
-      activities: [{ name: choice }],
+      activities: [{ name: choice, type: 2 }],
       status: "online"
     });
 
@@ -30,12 +29,17 @@ function rotate(client) {
   }
 }
 
-
 // ------------------------------------------------------
 // Public API
 // ------------------------------------------------------
 
 export function startPresenceRotation(client) {
+  // Randomize starting index
+  const list = getAlliancePrefixesForPresence();
+  if (list.length > 0) {
+    statusIndex = Math.floor(Math.random() * list.length);
+  }
+
   // Run once on startup
   rotate(client);
 

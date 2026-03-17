@@ -72,8 +72,10 @@ export function detectPool(guildConfig, channelId, messageId) {
 export function buildDebugEmbed(pool, messageId, entry, origin) {
   return createEmbed(
     "Debug Result",
-    "**Pool** - " + `${pool}\n\n` +
-    "**Message ID - **" + `${messageId}\n\n` +
+    "**Pool**\n" + 
+    `${pool}\n\n` +
+    "**Message ID**\n" +
+    `${messageId}\n\n` +
     "**Mapping Data**\n" +
     "```json\n" +
     JSON.stringify({ entry, origin }, null, 2) +

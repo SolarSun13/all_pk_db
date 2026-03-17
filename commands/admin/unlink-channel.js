@@ -35,7 +35,9 @@ export async function execute(interaction) {
   if (!entry || !entry[pool] || entry[pool].channel !== channel.id) {
     const embed = createEmbed(
       "Unlink Channel",
-      `This channel is not linked to the **${pool === "alliance" ? "Alliance Chat" : "Round Table"}** pool.`
+      `This channel is not linked to the **${
+        pool === "alliance" ? "Alliance Chat" : "Round Table"
+      }** pool.`
     );
 
     return interaction.reply({
@@ -44,13 +46,41 @@ export async function execute(interaction) {
     });
   }
 
-  // Remove link
+  // ------------------------------------------------------
+  // Delete the webhook associated with this pool
+  // ------------------------------------------------------
+
+  const webhookUrl = entry[pool].webhook;
+
+  if (webhookUrl) {
+    const parts = webhookUrl.split("/");
+    const webhookId = parts[parts.length - 2];
+    const webhookToken = parts[parts.length - 1];
+
+    try {
+      const webhook = await interaction.client.fetchWebhook(
+        webhookId,
+        webhookToken
+      );
+      await webhook.delete("Unlinking channel from pool");
+    } catch {
+      // Webhook already deleted or invalid — ignore safely
+    }
+  }
+
+  // ------------------------------------------------------
+  // Remove link from config
+  // ------------------------------------------------------
+
   delete entry[pool];
   saveConfig();
 
   const embed = createEmbed(
     "Unlink Channel",
-        "\\⚠️ " + `**${pool === "alliance" ? "Alliance Chat" : "Round Table"}**` + " pool unlinked from " + `<#${channel.id}>`
+    "\\⚠️ " +
+      `**${pool === "alliance" ? "Alliance Chat" : "Round Table"}**` +
+      " pool unlinked from " +
+      `<#${channel.id}>`
   );
 
   await interaction.reply({

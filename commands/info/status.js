@@ -26,8 +26,10 @@ export async function execute(interaction) {
       "**Server Name**\n" +
       `${guild.name}\n\n` +
       "**Prefix**" + "- Not configured\n\n" +
-      "• Alliance Chat – not linked \\⚠️\n" +
-      "• Round Table – not linked \\⚠️"
+      "Alliance Chat – not linked \\⚠️\n" +
+    `-# *public or general chat pool*\n\n` +
+      "Round Table – not linked \\⚠️\n" +
+    `-# *private or staff chat pool*`
     );
 
     return interaction.reply({
@@ -62,9 +64,9 @@ export async function execute(interaction) {
     "**Server Name**\n" +
     `${guild.name}\n\n` +
     "**Prefix** " + `- \`${prefix}\`\n\n` +
-    `**Alliance Chat** – ${allianceChannel}  \\${allianceStatus}\n` +
+    `Alliance Chat – ${allianceChannel}  \\${allianceStatus}\n` +
     `-# *public or general chat pool*\n\n` +
-    `**Round Table** – ${roundtableChannel}  \\${roundtableStatus}\n` +
+    `Round Table – ${roundtableChannel}  \\${roundtableStatus}\n` +
     `-# *private or staff chat pool*`
   );
 

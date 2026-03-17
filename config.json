@@ -1,44 +1,51 @@
 {
   "guilds": {
+    "1482000849923477709": {
+      "name": "PHIL (newer)",
+      "roundtable": {
+        "channel": "1482717834545991781",
+        "webhook": "https://discord.com/api/webhooks/1483474276995698821/s0MzCxwLsuXbc3wZOfZp0cP6ezPFxU4HoEQku4CvkBqK2cJE_EOXpV4glDP3PLOsZfHW"
+      },
+      "prefix": "[PHIL]",
+      "alliance": {
+        "channel": "1482008739950104700",
+        "webhook": "https://discord.com/api/webhooks/1483474108191605009/XOs217_8BraZF6cQSsOcDKeOTBRMKW3iFUyG0V1viJC4N84zz7UyFiGo4PxMLTYxFSEw"
+      },
+      "allianceJoinCooldown": 1773762480880
+    },
     "1481193205319073805": {
       "name": "App Test",
-      "prefix": "[TEST]",
-      "channel": "1481193206212198503",
-      "webhook": "https://discord.com/api/webhooks/1481323706511790242/Ntmp0FTsGCWN8PytNct2nM7ZWJEfrOjuQfsA-ex149c7ppUH9cemk1S1WPk6lRPKFC7v",
       "alliance": {
         "channel": "1481193206212198503",
-        "webhook": "https://discord.com/api/webhooks/1482274344582381569/V96srJ-eVzE4dvIv9ItSe_28oEiWHKaPiwKuOmOX2s9QEsYBME1EYMGf0vOkPPLgd0ES"
+        "webhook": "https://discord.com/api/webhooks/1483434040114675722/a-ollhEg66C7-QY5HwZ1h1LMIFzlOEf9yIdJHILiEWycyHpi7XThgxE0UN0ktfB_ZHkJ"
       },
       "roundtable": {
         "channel": "1482274578851172464",
         "webhook": "https://discord.com/api/webhooks/1482274703132594278/Sqe40kGgtJmn-FHuO6d7HKA4SywszTPS0aOOz1hQe5T8hKqQ_A_PM212YgU4YQvFZHWR"
-      }
+      },
+      "prefix": "[TEST]",
+      "allianceJoinCooldown": 1773761829124
     },
     "1459097706801922133": {
       "name": "test",
       "prefix": "[JUMP]",
-      "channel": "1481198393387909143",
-      "webhook": "https://discord.com/api/webhooks/1481526863854702682/NyAqbZFeBIacFnvz8Qk-mi0AzsUuGkkwOznmDE9XCVkEq6vWvfZysdogykJSIe8VoNO0",
-      "alliance": {
-        "channel": "1481198393387909143",
-        "webhook": "https://discord.com/api/webhooks/1482274378891661462/ZlKBq8-TaijsEkYkEoBC2ClIg8hRONrUynJ8VIwA4EfpJMc8_mgfqt3hqHsLm04Bb8RJ"
-      },
       "roundtable": {
         "channel": "1482274563135115438",
         "webhook": "https://discord.com/api/webhooks/1482274666348281937/_YyGKDa6M3BdiR9kWQigpAWsH8ol8IDa-FYNd_RGDIy4E0Cdy6gEHSoCeO83n3XXc1u-"
-      }
-    },
-    "1482000849923477709": {
-      "name": "PHIL (newer)",
-      "prefix": "[PHIL]",
-      "roundtable": {
-        "channel": "1482717834545991781",
-        "webhook": "https://discord.com/api/webhooks/1483404669706305567/VyHaWM9L0TvJ0rkUTajXfXfTLTXNUPAJhVbP3jObv9IxIJLON7wfDPovNiRVLuz4mBlH"
       },
       "alliance": {
-        "channel": "1482008739950104700",
-        "webhook": "https://discord.com/api/webhooks/1483407686786744352/3gRUL5UgSyLgZ7Les3NAsMh1CsG9ofUuAkb_wTh0MpUy9hX73Y8PFr9vn5oEzmlg7-Xq"
+        "channel": "1481198393387909143",
+        "webhook": "https://discord.com/api/webhooks/1483487597031460865/EYb1GAdEDPfIIjxLv38XuXb5EOF2Ni30jbpuqqPTSO0Y8oe43o62fKmRPSo5GIQd5aej"
       }
     }
+  },
+  "lastAllianceJoinAnnouncement": 1773760633389,
+  "lastRoundtableJoinAnnouncement": 1773760830369,
+  "lastSeen": {
+    "alliance": {
+      "1010343899962822806": "1481193205319073805",
+      "1465339181990547573": "1482000849923477709"
+    },
+    "roundtable": {}
   }
 }

@@ -42,7 +42,7 @@ export async function execute(interaction) {
   const embed = createEmbed(
     "Alliance Servers",
     list.map(n => `• ${n}`).join("\n"),
-    "✅ connected to the Alliance Chat pool"
+    "✅ connected to the alliance chat pool"
   );
 
   await interaction.reply({

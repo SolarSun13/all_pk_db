@@ -19,6 +19,12 @@ import { registerAllianceHandlers } from "./pools/alliance.js";
 import { registerRoundTableHandlers } from "./pools/roundtable.js";
 import { startPresenceRotation } from "./core/presence.js";
 
+// NEW: cleanup helpers
+import {
+  removeGuildFromConfig,
+  pruneInvalidPoolEntries
+} from "./core/cleanup.js";
+
 
 // ------------------------------------------------------
 // Environment
@@ -65,7 +71,24 @@ client.once("ready", async () => {
   // Start presence rotation (Alliance-only prefixes)
   startPresenceRotation(client);
 
+  // ------------------------------------------------------
+  // Periodic Cleanup Job (every 6 hours)
+  // ------------------------------------------------------
+  setInterval(() => {
+    pruneInvalidPoolEntries(client);
+  }, 6 * 60 * 60 * 1000);
+
   console.log("Bot is fully initialized.");
+});
+
+
+// ------------------------------------------------------
+// Guild Delete Handler (bot kicked or server deleted)
+// ------------------------------------------------------
+
+client.on("guildDelete", (guild) => {
+  console.log(`Bot removed from guild: ${guild.id} (${guild.name})`);
+  removeGuildFromConfig(guild.id);
 });
 
 

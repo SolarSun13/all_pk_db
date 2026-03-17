@@ -69,6 +69,13 @@ function loadConfig() {
   // Ensure structure
   if (!config.guilds) config.guilds = {};
 
+  // ------------------------------------------------------
+  // NEW: Ensure lastSeen structure exists
+  // ------------------------------------------------------
+  if (!config.lastSeen) {
+    config.lastSeen = { alliance: {}, roundtable: {} };
+  }
+
   return config;
 }
 

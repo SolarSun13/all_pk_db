@@ -18,7 +18,7 @@ import {
   prunePool
 } from "../core/mapping.js";
 
-import { getConfig } from "../core/storage.js";
+import { getConfig, saveConfig } from "../core/storage.js";
 import { getPrefix } from "../core/prefixes.js";
 
 
@@ -56,13 +56,21 @@ export function registerRoundTableHandlers(client) {
     if (!msg.guild) return;
     if (msg.author.bot) return;
 
-     // Ignore system pin messages
-     if (msg.type === 6) return;
+    // Ignore system pin messages
+    if (msg.type === 6) return;
 
     if (!isRoundTableLinked(msg)) return;
 
     const pool = "roundtable";
     const originGuild = msg.guild;
+
+    // ------------------------------------------------------
+    // Track last-seen for Round Table pool
+    // ------------------------------------------------------
+    const config = getConfig();
+    if (!config.lastSeen) config.lastSeen = { alliance: {}, roundtable: {} };
+    config.lastSeen.roundtable[msg.author.id] = msg.guild.id;
+    saveConfig();
 
     const prefix = getPrefix(originGuild.id, originGuild.name);
     const username = `${prefix} ${msg.author.username}`;
@@ -90,12 +98,12 @@ export function registerRoundTableHandlers(client) {
     const repliedToId = msg.reference?.messageId || null;
     const replyInfo = repliedToId ? getOriginAndRelays(pool, repliedToId) : null;
 
-    const replyHeader = replyInfo
-      ? (targetGuildId) => {
-          const originPrefix = getPrefix(replyInfo.originGuildId, "Server");
-          const repliedUser = msg.mentions?.repliedUser;
-          let repliedName = repliedUser ? repliedUser.username : "original message";
-repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
+const replyHeader = replyInfo
+  ? (targetGuildId) => {
+      const originPrefix = getPrefix(replyInfo.originGuildId, "Server");
+      const repliedUser = msg.mentions?.repliedUser;
+      let repliedName = repliedUser ? repliedUser.username : "original message";
+      repliedName = repliedName.replace(/^\s*\[[^\]]+\]\s*/, "");
 
           const namePart = `${originPrefix} ${repliedName}`;
 
@@ -114,9 +122,21 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
         }
       : null;
 
+    // ------------------------------------------------------
+    // Determine ping guild for mentions (first mentioned user only)
+    // ------------------------------------------------------
+    let pingGuildId = originGuild.id;
+
+    if (msg.mentions.users.size > 0) {
+      const firstMentioned = [...msg.mentions.users.values()][0];
+      const lastSeen = config.lastSeen?.roundtable?.[firstMentioned.id];
+      if (lastSeen) pingGuildId = lastSeen;
+    }
+
+    // ------------------------------------------------------
     // Relay to all other Round Table servers
+    // ------------------------------------------------------
     const relays = [];
-    const config = getConfig();
 
     for (const [guildId, data] of Object.entries(config.guilds)) {
       if (guildId === originGuild.id) continue;
@@ -134,15 +154,47 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
           content: contentParts.join("\n")
         };
 
-        const response = await postWebhook(`${data.roundtable.webhook}?wait=true`, payload);
         let webhookMessageId = null;
 
-        try {
-          if (response && response.ok) {
-            const text = await response.text();
-            if (text) webhookMessageId = JSON.parse(text)?.id || null;
+        // ------------------------------------------------------
+        // Ping guild → real ping
+        // ------------------------------------------------------
+        if (guildId === pingGuildId) {
+          const response = await postWebhook(`${data.roundtable.webhook}?wait=true`, payload);
+          try {
+            if (response && response.ok) {
+              const text = await response.text();
+              if (text) webhookMessageId = JSON.parse(text)?.id || null;
+            }
+          } catch {}
+        }
+
+        // ------------------------------------------------------
+        // Other guilds → silent mention (send "-" then edit)
+        // ------------------------------------------------------
+        else {
+          const placeholder = await postWebhook(`${data.roundtable.webhook}?wait=true`, {
+            username,
+            avatar_url: avatar,
+            content: "-"
+          });
+
+          let placeholderId = null;
+          try {
+            if (placeholder && placeholder.ok) {
+              const text = await placeholder.text();
+              if (text) placeholderId = JSON.parse(text)?.id || null;
+            }
+          } catch {}
+
+          if (placeholderId) {
+            await patchWebhook(
+              `${data.roundtable.webhook}/messages/${placeholderId}`,
+              payload
+            );
+            webhookMessageId = placeholderId;
           }
-        } catch {}
+        }
 
         if (webhookMessageId) {
           addMirror(pool, msg.id, guildId, webhookMessageId);
@@ -234,7 +286,6 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
 
       const pool = "roundtable";
 
-      // Resolve origin + relays whether this is origin or mirror
       let targets = getOriginAndRelays(pool, reaction.message.id);
       if (!targets) {
         const mirrorEntry = getEntry(pool, reaction.message.id);
@@ -252,7 +303,6 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
         sourceGuildId === targets.originGuildId &&
         sourceMessageId === targets.originId;
 
-      // React on origin if reaction came from a mirror
       if (!isFromOrigin) {
         const originChannelId = getRoundTableChannel(targets.originGuildId);
         if (originChannelId) {
@@ -266,7 +316,6 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
         }
       }
 
-      // React on all mirrors except the source message
       for (const relay of targets.relays) {
         if (!relay.webhook_message_id) continue;
         if (relay.guild_id === sourceGuildId && relay.webhook_message_id === sourceMessageId) continue;
@@ -295,7 +344,6 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
 
       const pool = "roundtable";
 
-      // Resolve origin + relays whether this is origin or mirror
       let targets = getOriginAndRelays(pool, reaction.message.id);
       if (!targets) {
         const mirrorEntry = getEntry(pool, reaction.message.id);
@@ -313,7 +361,6 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
         sourceGuildId === targets.originGuildId &&
         sourceMessageId === targets.originId;
 
-      // Remove from origin if reaction came from a mirror
       if (!isFromOrigin) {
         const originChannelId = getRoundTableChannel(targets.originGuildId);
         if (originChannelId) {
@@ -330,7 +377,6 @@ repliedName = repliedName.replace(/^\[[^\]]+\]\s*/, "");
         }
       }
 
-      // Remove from all mirrors except the source message
       for (const relay of targets.relays) {
         if (!relay.webhook_message_id) continue;
         if (relay.guild_id === sourceGuildId && relay.webhook_message_id === sourceMessageId) continue;
