@@ -2,41 +2,68 @@
   "guilds": {
     "1482000849923477709": {
       "name": "PHIL (newer)",
-      "roundtable": {
-        "channel": "1482717834545991781",
-        "webhook": "https://discord.com/api/webhooks/1483474276995698821/s0MzCxwLsuXbc3wZOfZp0cP6ezPFxU4HoEQku4CvkBqK2cJE_EOXpV4glDP3PLOsZfHW"
-      },
-      "prefix": "[PHIL]",
-      "alliance": {
-        "channel": "1482008739950104700",
-        "webhook": "https://discord.com/api/webhooks/1483474108191605009/XOs217_8BraZF6cQSsOcDKeOTBRMKW3iFUyG0V1viJC4N84zz7UyFiGo4PxMLTYxFSEw"
-      },
+      "prefix": "[PHIL (newer)]",
       "allianceJoinCooldown": 1773762480880
     },
     "1481193205319073805": {
       "name": "App Test",
-      "alliance": {
-        "channel": "1481193206212198503",
-        "webhook": "https://discord.com/api/webhooks/1483434040114675722/a-ollhEg66C7-QY5HwZ1h1LMIFzlOEf9yIdJHILiEWycyHpi7XThgxE0UN0ktfB_ZHkJ"
-      },
-      "roundtable": {
-        "channel": "1482274578851172464",
-        "webhook": "https://discord.com/api/webhooks/1482274703132594278/Sqe40kGgtJmn-FHuO6d7HKA4SywszTPS0aOOz1hQe5T8hKqQ_A_PM212YgU4YQvFZHWR"
-      },
-      "prefix": "[TEST]",
+      "prefix": "[App Test]",
       "allianceJoinCooldown": 1773761829124
     },
     "1459097706801922133": {
       "name": "test",
-      "prefix": "[JUMP]",
-      "roundtable": {
-        "channel": "1482274563135115438",
-        "webhook": "https://discord.com/api/webhooks/1482274666348281937/_YyGKDa6M3BdiR9kWQigpAWsH8ol8IDa-FYNd_RGDIy4E0Cdy6gEHSoCeO83n3XXc1u-"
-      },
+      "prefix": "[test]"
+    },
+    "533814789928124436": {
+      "name": "PHIL Parkour",
       "alliance": {
-        "channel": "1481198393387909143",
-        "webhook": "https://discord.com/api/webhooks/1483487597031460865/EYb1GAdEDPfIIjxLv38XuXb5EOF2Ni30jbpuqqPTSO0Y8oe43o62fKmRPSo5GIQd5aej"
-      }
+        "channel": "1483588570638975199",
+        "webhook": "https://discord.com/api/webhooks/1483737859742629888/vxqe8H8N3TdqrYRP8N6HXfVlSqZcHqNQtq1qJlXffK7VvckXUXgW_ekPa0QUn6hDnJVC"
+      },
+      "allianceJoinCooldown": 1773918545203,
+      "prefix": "[PHIL]",
+      "roundtable": {
+        "channel": "1483582383734390904",
+        "webhook": "https://discord.com/api/webhooks/1483737953061703802/7p2FK-ymUBtsFedi2JB4worxZV2xVYAiK7OuWM18UssMRMiSkEj6NXkEBtmxgmJ1SC-Q"
+      },
+      "roundtableJoinCooldown": 1773918695038
+    },
+    "484192043833491487": {
+      "name": "Map Makers of Krunker",
+      "roundtable": {
+        "channel": "1483957574754898051",
+        "webhook": "https://discord.com/api/webhooks/1484148120026742936/lofmS-NSq7jnkgiBD_TcomLeYL0a_RekNbq_tTiAKxyx3Hku1zbI2jbgK8ezjXYa0ux_"
+      },
+      "roundtableJoinCooldown": 1773918886289,
+      "prefix": "[MMOK]",
+      "alliance": {
+        "channel": "1484150143858118737",
+        "webhook": "https://discord.com/api/webhooks/1484150183502549096/iKF_y_Rt0BtkeMJiDk1TLnzS3sOzpTf4bhxsgdDYQ7--E_O2zI9Paotne4L8BpT498ty"
+      },
+      "allianceJoinCooldown": 1773919378433
+    },
+    "678671479256383498": {
+      "name": "Krunker Parkour Hub",
+      "alliance": {
+        "channel": "1483732163026485248",
+        "webhook": "https://discord.com/api/webhooks/1483753138786795612/JN4cPA50pXYuDJ3nWZ6MhqsV7s9TLSRIdaf7pYAyXd9gBsOMOJP_7Xts_bsxGG-DOP4l"
+      },
+      "allianceJoinCooldown": 1773919110496,
+      "prefix": "[KPH]",
+      "roundtable": {
+        "channel": "1483751829157445733",
+        "webhook": "https://discord.com/api/webhooks/1483753177885966346/mtX74Gg5CX7pAg4NCFFoE1bcwj0tlhDYtmaypxzzPw1IleTXA75PclkTLrWUChiZ66Vp"
+      },
+      "roundtableJoinCooldown": 1773919129119
+    },
+    "360585637356765187": {
+      "name": "Jump | Krunker's Movement Hub",
+      "alliance": {
+        "channel": "1484037960814035055",
+        "webhook": "https://discord.com/api/webhooks/1484038616966496408/hUMCnSCxCjVs0uuoqREodjwhClcCMcys-p6UxynabZbOS4IkU1s0ApCBPphbHDIuTsvA"
+      },
+      "allianceJoinCooldown": 1773919187103,
+      "prefix": "[Jump]"
     }
   },
   "lastAllianceJoinAnnouncement": 1773760633389,
@@ -46,6 +73,11 @@
       "1010343899962822806": "1481193205319073805",
       "1465339181990547573": "1482000849923477709"
     },
-    "roundtable": {}
+    "roundtable": {
+      "170765295223439361": "533814789928124436",
+      "545037021404594186": "484192043833491487",
+      "713056818972066140": "484192043833491487",
+      "1010343899962822806": "533814789928124436"
+    }
   }
 }
